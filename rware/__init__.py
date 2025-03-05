@@ -51,9 +51,10 @@ def image_registration():
         _difficulty,
         _observation_type,
         _image_directional,
-        range(1, 20),
+        range(1, 10),
+        range(1, 5),
     )
-    for size, diff, obs_type, directional, agents in _perms:
+    for size, diff, obs_type, directional, sensor_range, agents in _perms:
         if obs_type == "" and directional == "":
             # already registered before
             continue
@@ -61,7 +62,7 @@ def image_registration():
             # directional values should only be used with image observations
             continue
         register(
-            id=f"rware{obs_type}{directional}-{size}-{agents}ag{diff}-v2",
+            id=f"rware{obs_type}{directional}-{sensor_range}-{size}-{agents}ag{diff}-v2",
             entry_point="rware.warehouse:Warehouse",
             kwargs={
                 "column_height": 8,
@@ -69,7 +70,7 @@ def image_registration():
                 "shelf_columns": _sizes[size][1],
                 "n_agents": agents,
                 "msg_bits": 0,
-                "sensor_range": 1,
+                "sensor_range": sensor_range,
                 "request_queue_size": int(agents * _difficulty[diff]),
                 "max_inactivity_steps": None,
                 "max_steps": 500,
