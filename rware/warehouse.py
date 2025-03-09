@@ -161,8 +161,8 @@ class Warehouse(gym.Env):
             ImageLayer.SHELVES,
             ImageLayer.REQUESTS,
             ImageLayer.AGENTS,
+            ImageLayer.AGENT_LOAD,
             ImageLayer.GOALS,
-            ImageLayer.ACCESSIBLE,
         ],
         image_observation_directional: bool = True,
         normalised_coordinates: bool = False,
@@ -370,9 +370,9 @@ class Warehouse(gym.Env):
             if layer == ImageLayer.AGENT_DIRECTION:
                 # directions as int
                 layer_min = np.zeros(observation_shape, dtype=np.float32)
-                layer_max = np.ones(observation_shape, dtype=np.float32) * max(
-                    [d.value + 1 for d in Direction]
-                )
+                layer_max = np.ones(observation_shape, dtype=np.float32) * max([
+                    d.value + 1 for d in Direction
+                ])
             else:
                 # binary layer
                 layer_min = np.zeros(observation_shape, dtype=np.float32)
@@ -398,13 +398,11 @@ class Warehouse(gym.Env):
         self.image_obs = False
         self.image_dict_obs = True
         feature_space = gym.spaces.Dict(
-            OrderedDict(
-                {
-                    "direction": gym.spaces.Discrete(4),
-                    "on_highway": gym.spaces.MultiBinary(1),
-                    "carrying_shelf": gym.spaces.MultiBinary(1),
-                }
-            )
+            OrderedDict({
+                "direction": gym.spaces.Discrete(4),
+                "on_highway": gym.spaces.MultiBinary(1),
+                "carrying_shelf": gym.spaces.MultiBinary(1),
+            })
         )
 
         feature_flat_dim = gym.spaces.flatdim(feature_space)
@@ -416,14 +414,10 @@ class Warehouse(gym.Env):
         )
 
         return gym.spaces.Tuple(
-            tuple(
-                [
-                    gym.spaces.Dict(
-                        {"image": image_obs_space, "features": feature_space}
-                    )
-                    for _ in range(self.n_agents)
-                ]
-            )
+            tuple([
+                gym.spaces.Dict({"image": image_obs_space, "features": feature_space})
+                for _ in range(self.n_agents)
+            ])
         )
 
     def _use_slow_obs(self):
@@ -458,48 +452,38 @@ class Warehouse(gym.Env):
         )
 
         self_observation_dict_space = gym.spaces.Dict(
-            OrderedDict(
-                {
-                    "location": location_space,
-                    "carrying_shelf": gym.spaces.MultiBinary(1),
-                    "direction": gym.spaces.Discrete(4),
-                    "on_highway": gym.spaces.MultiBinary(1),
-                }
-            )
-        )
-        sensor_per_location_dict = OrderedDict(
-            {
-                "has_agent": gym.spaces.MultiBinary(1),
+            OrderedDict({
+                "location": location_space,
+                "carrying_shelf": gym.spaces.MultiBinary(1),
                 "direction": gym.spaces.Discrete(4),
-            }
+                "on_highway": gym.spaces.MultiBinary(1),
+            })
         )
+        sensor_per_location_dict = OrderedDict({
+            "has_agent": gym.spaces.MultiBinary(1),
+            "direction": gym.spaces.Discrete(4),
+        })
         if self.msg_bits > 0:
             sensor_per_location_dict["local_message"] = gym.spaces.MultiBinary(
                 self.msg_bits
             )
-        sensor_per_location_dict.update(
-            {
-                "has_shelf": gym.spaces.MultiBinary(1),
-                "shelf_requested": gym.spaces.MultiBinary(1),
-            }
-        )
+        sensor_per_location_dict.update({
+            "has_shelf": gym.spaces.MultiBinary(1),
+            "shelf_requested": gym.spaces.MultiBinary(1),
+        })
         return gym.spaces.Tuple(
-            tuple(
-                [
-                    gym.spaces.Dict(
-                        OrderedDict(
-                            {
-                                "self": self_observation_dict_space,
-                                "sensors": gym.spaces.Tuple(
-                                    self._obs_sensor_locations
-                                    * (gym.spaces.Dict(sensor_per_location_dict),)
-                                ),
-                            }
-                        )
-                    )
-                    for _ in range(self.n_agents)
-                ]
-            )
+            tuple([
+                gym.spaces.Dict(
+                    OrderedDict({
+                        "self": self_observation_dict_space,
+                        "sensors": gym.spaces.Tuple(
+                            self._obs_sensor_locations
+                            * (gym.spaces.Dict(sensor_per_location_dict),)
+                        ),
+                    })
+                )
+                for _ in range(self.n_agents)
+            ])
         )
 
     def _use_fast_obs(self):
@@ -594,7 +578,7 @@ class Warehouse(gym.Env):
                 obs = np.rot90(obs, k=1, axes=(1, 2))
             # no rotation needed for UP direction
         return obs
-        
+
     def _get_default_obs(self, agent):
         min_x = agent.x - self.sensor_range
         max_x = agent.x + self.sensor_range + 1
@@ -668,9 +652,10 @@ class Warehouse(gym.Env):
                 if id_shelf == 0:
                     obs.write([0.0, 0.0])  # no shelf or requested shelf
                 else:
-                    obs.write(
-                        [1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)]
-                    )  # shelf presence and request status
+                    obs.write([
+                        1.0,
+                        int(self.shelfs[id_shelf - 1] in self.request_queue),
+                    ])  # shelf presence and request status
             return obs.vector
 
         # write dictionary observations
@@ -730,12 +715,10 @@ class Warehouse(gym.Env):
             direction = np.zeros(4)
             direction[agent.dir.value] = 1.0
             feature_obs.write(direction)
-            feature_obs.write(
-                [
-                    int(self._is_highway(agent.x, agent.y)),
-                    int(agent.carrying_shelf is not None),
-                ]
-            )
+            feature_obs.write([
+                int(self._is_highway(agent.x, agent.y)),
+                int(agent.carrying_shelf is not None),
+            ])
             return {
                 "image": image_obs,
                 "features": feature_obs.vector,
